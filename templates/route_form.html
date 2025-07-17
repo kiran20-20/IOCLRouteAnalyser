@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>IndianOil Route Planner</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #003366, #0055A4);
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 20px 40px;
+      font-size: 2rem;
+      font-weight: bold;
+      background-color: rgba(0, 0, 0, 0.2);
+      text-align: center;
+      text-shadow: 1px 1px #000;
+    }
+
+    header img {
+      height: 40px;
+      vertical-align: middle;
+      margin-right: 15px;
+    }
+
+    .slogan {
+      text-align: center;
+      margin-top: 5px;
+      font-style: italic;
+      font-size: 1.1rem;
+      color: #ffcc00;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .form-box {
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+      width: 400px;
+      backdrop-filter: blur(4px);
+    }
+
+    .form-box h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #ffffff;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      background-color: #ffffff;
+      color: #000000;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid #ffa500;
+    }
+
+    button {
+      background-color: #ffa500;
+      color: #000;
+      border: none;
+      padding: 12px;
+      font-weight: bold;
+      width: 100%;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #ffc107;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 15px;
+      font-size: 0.9rem;
+      background-color: rgba(0,0,0,0.2);
+    }
+
+    #landmarkInfo {
+      background-color: rgba(0,0,0,0.2);
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    #landmarkInfo p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="{{ url_for('static', filename='iocl_logo.png') }}" alt="IOCL Logo">
+    IndianOil Route Planner
+    <div class="slogan">“Fueling the Nation’s Journey — Safely & Smartly”</div>
+  </header>
+
+  <main>
+    <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
+      <h2>Enter Route Details</h2>
+
+      <label>Source Landmark Code</label>
+      <select id="landmarkCode" required>
+        <option value="">-- Select a Landmark Code --</option>
+      </select>
+
+      <div id="landmarkInfo" style="display:none;">
+        <p><strong>Name:</strong> <span id="landmarkName"></span></p>
+        <p><strong>Latitude:</strong> <span id="landmarkLat"></span></p>
+        <p><strong>Longitude:</strong> <span id="landmarkLng"></span></p>
+      </div>
+
+      <input type="hidden" name="source" id="sourceCoord">
+
+      <label>Destination Coordinates (lat,lng)</label>
+      <input type="text" name="destination" placeholder="e.g. 22.3, 73.1" required>
+
+      <label>Mode of Travel</label>
+      <select name="vehicle" required>
+        <option value="driving">🚗 Driving</option>
+        <option value="walking">🚶 Walking</option>
+        <option value="bicycling">🚴 Bicycling</option>
+      </select>
+
+      <button type="submit"><i class="fa-solid fa-route"></i> Generate Routes</button>
+    </form>
+  </main>
+
+  <div class="footer">© 2025 IndianOil Corporation Ltd.</div>
+
+  <script>
+    const landmarks = {{ landmarks | safe }};
+    const dropdown = document.getElementById("landmarkCode");
+    const infoBox = document.getElementById("landmarkInfo");
+
+    landmarks.forEach(lm => {
+      const opt = document.createElement("option");
+      opt.value = lm.code;
+      opt.textContent = lm.code;
+      dropdown.appendChild(opt);
+    });
+
+    dropdown.addEventListener("change", function () {
+      const selected = landmarks.find(l => l.code === this.value);
+      if (selected) {
+        document.getElementById("landmarkName").textContent = selected.name;
+        document.getElementById("landmarkLat").textContent = selected.lat;
+        document.getElementById("landmarkLng").textContent = selected.lng;
+        document.getElementById("sourceCoord").value = `${selected.lat},${selected.lng}`;
+        infoBox.style.display = "block";
+      } else {
+        infoBox.style.display = "none";
+      }
+    });
+  </script>
+
+</body>
+</html>
