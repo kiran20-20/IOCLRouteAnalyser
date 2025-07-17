@@ -8,6 +8,7 @@ from branca.element import Template, MacroElement
 import os
 import pandas as pd
 import json
+import glob
 
 
 app = Flask(__name__)
@@ -30,8 +31,19 @@ def home():
     return render_template("route_form.html", landmarks=landmarks)
 
 
+
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
+    # 🔴 Clear previous session and old preview files
+    session.clear()
+
+    # 🧹 Delete old HTML files
+    for file in glob.glob("templates/route_preview_*.html"):
+        try:
+            os.remove(file)
+        except Exception as e:
+            print(f"Error deleting {file}: {e}")
+
     source = request.form['source']
     destination = request.form['destination']
     vehicle = request.form['vehicle']
@@ -78,6 +90,7 @@ def fetch_routes():
         })
 
     return render_template("route_select.html", routes=routes)
+
 
 @app.route('/analyze_route', methods=['POST'])
 def analyze_route():
