@@ -32,28 +32,34 @@ def home():
 
 
 
+import glob
+
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
-    # 🔴 Clear previous session and old preview files
+    # ✅ Step 1: Clear the previous session completely
     session.clear()
 
-    # 🧹 Delete old HTML files
-    for file in glob.glob("templates/route_preview_*.html"):
+    # ✅ Step 2: Delete old route preview files
+    preview_files = glob.glob("templates/route_preview_*.html")
+    for file in preview_files:
         try:
             os.remove(file)
         except Exception as e:
             print(f"Error deleting {file}: {e}")
 
+    # ✅ Step 3: Read new inputs
     source = request.form['source']
     destination = request.form['destination']
     vehicle = request.form['vehicle']
 
+    # ✅ Step 4: Parse coordinates
     try:
         source_coords = tuple(map(float, source.split(',')))
         dest_coords = tuple(map(float, destination.split(',')))
     except ValueError:
-        return "Invalid coordinates"
+        return "Invalid coordinates format. Please use lat,lng format."
 
+    # ✅ Step 5: Request new directions
     directions = gmaps.directions(
         source_coords, dest_coords,
         mode=vehicle,
@@ -64,11 +70,13 @@ def fetch_routes():
     if not directions:
         return "No routes found."
 
+    # ✅ Step 6: Store new session data
     session['directions'] = directions
     session['source'] = source_coords
     session['destination'] = dest_coords
     session['vehicle'] = vehicle
 
+    # ✅ Step 7: Generate fresh previews
     routes = []
     for i, route in enumerate(directions):
         coords = polyline.decode(route['overview_polyline']['points'])
@@ -78,6 +86,7 @@ def fetch_routes():
 
         m = folium.Map(location=coords[len(coords)//2], zoom_start=12)
         folium.PolyLine(coords, color='blue', weight=5).add_to(m)
+
         preview_file = f"route_preview_{i}.html"
         m.save(f"templates/{preview_file}")
 
