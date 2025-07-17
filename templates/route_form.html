@@ -3,166 +3,115 @@
 <head>
   <meta charset="UTF-8">
   <title>IndianOil Route Planner</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to right, #003366, #0055A4);
-      color: white;
-      height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen;
+      background: linear-gradient(to right, #f8f9fa, #e0e0e0);
+      min-height: 100vh;
       display: flex;
-      flex-direction: column;
-    }
-
-    header {
-      padding: 20px 40px;
-      font-size: 2rem;
-      font-weight: bold;
-      background-color: rgba(0, 0, 0, 0.2);
-      text-align: center;
-      text-shadow: 1px 1px #000;
-    }
-
-    header img {
-      height: 40px;
-      vertical-align: middle;
-      margin-right: 15px;
-    }
-
-    .slogan {
-      text-align: center;
-      margin-top: 5px;
-      font-style: italic;
-      font-size: 1.1rem;
-      color: #ffcc00;
-    }
-
-    main {
-      flex: 1;
-      display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
 
     .form-box {
-      background-color: rgba(255, 255, 255, 0.1);
-      padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+      background-color: white;
+      padding: 40px;
+      border-radius: 16px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.1);
       width: 400px;
-      backdrop-filter: blur(4px);
     }
 
     .form-box h2 {
       text-align: center;
       margin-bottom: 25px;
-      color: #ffffff;
+      color: #333;
+    }
+
+    label {
+      font-weight: 600;
+      margin-top: 10px;
+      display: block;
     }
 
     input, select {
       width: 100%;
-      padding: 10px;
-      margin: 10px 0 20px;
-      border: none;
-      border-radius: 6px;
+      padding: 12px;
+      margin: 10px 0;
       font-size: 1rem;
-    }
-
-    input:focus, select:focus {
-      outline: 2px solid #ffa500;
+      border: 1px solid #ccc;
+      border-radius: 8px;
     }
 
     button {
-      background-color: #ffa500;
-      color: #000;
-      border: none;
-      padding: 12px;
-      font-weight: bold;
       width: 100%;
+      padding: 14px;
       font-size: 1rem;
-      border-radius: 6px;
+      background-color: #0071e3;
+      border: none;
+      color: white;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      margin-top: 20px;
     }
 
     button:hover {
-      background-color: #ffc107;
+      background-color: #005bb5;
     }
 
     .footer {
-      text-align: center;
-      padding: 15px;
+      margin-top: 20px;
       font-size: 0.9rem;
-      background-color: rgba(0,0,0,0.2);
+      text-align: center;
+      color: #888;
+    }
+
+    datalist option {
+      padding: 10px;
     }
   </style>
 </head>
 <body>
 
-  <header>
-    <img src="{{ url_for('static', filename='iocl_logo.png') }}" alt="IOCL Logo">
-    IndianOil Route Planner
-    <div class="slogan">“Fueling the Nation’s Journey — Safely & Smartly”</div>
-  </header>
+  <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
+    <h2>Enter Route Details</h2>
 
-  <main>
-    <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
-      <h2>Enter Route Details</h2>
+    <label for="landmark_name">Source Landmark</label>
+    <input type="text" id="landmark_name" list="landmarkList" placeholder="Start typing landmark name...">
+    <datalist id="landmarkList">
+      {% for lm in landmarks %}
+        <option value="{{ lm['name'] }}">
+      {% endfor %}
+    </datalist>
 
-      <label for="source-select">Source Landmark</label>
-      <select id="source-select" class="landmark-select">
-        <option value="">Select a Landmark</option>
-      </select>
-      <input type="text" name="source" id="source-coords" placeholder="lat, lng" required readonly>
+    <label for="source">Source Coordinates</label>
+    <input type="text" name="source" id="source" placeholder="Will autofill after selecting landmark" readonly required>
 
-      <label for="destination-select">Destination Landmark</label>
-      <select id="destination-select" class="landmark-select">
-        <option value="">Select a Landmark</option>
-      </select>
-      <input type="text" name="destination" id="destination-coords" placeholder="lat, lng" required readonly>
+    <label for="destination">Destination Coordinates</label>
+    <input type="text" name="destination" id="destination" placeholder="e.g. 22.3072, 73.1812" required>
 
-      <label>Mode of Travel</label>
-      <select name="vehicle" required>
-        <option value="driving">🚗 Driving</option>
-        <option value="walking">🚶 Walking</option>
-        <option value="bicycling">🚴 Bicycling</option>
-      </select>
+    <label for="vehicle">Mode of Travel</label>
+    <select name="vehicle" id="vehicle" required>
+      <option value="driving">🚗 Driving</option>
+      <option value="walking">🚶 Walking</option>
+      <option value="bicycling">🚴 Bicycling</option>
+    </select>
 
-      <button type="submit"><i class="fa-solid fa-route"></i> Generate Routes</button>
-    </form>
-  </main>
+    <button type="submit"><i class="fa-solid fa-route"></i> Generate Routes</button>
+    <div class="footer">© 2025 IndianOil Corporation Ltd.</div>
+  </form>
 
-  <div class="footer">© 2025 IndianOil Corporation Ltd.</div>
-
-  <!-- JS Dependencies -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
   <script>
-    const landmarks = {{ landmarks|safe }};
+    const landmarkData = {{ landmarks | safe }};
 
-    function populateLandmarks(selectId, coordInputId) {
-      const $select = $(`#${selectId}`);
-      landmarks.forEach((lm) => {
-        const option = new Option(lm.name, `${lm.lat},${lm.lng}`);
-        $select.append(option);
-      });
-
-      $select.select2({
-        placeholder: 'Type to search a landmark',
-        width: '100%'
-      });
-
-      $select.on('change', function() {
-        const coords = $(this).val();
-        $(`#${coordInputId}`).val(coords);
-      });
-    }
-
-    $(document).ready(function() {
-      populateLandmarks('source-select', 'source-coords');
-      populateLandmarks('destination-select', 'destination-coords');
+    document.getElementById('landmark_name').addEventListener('input', function () {
+      const name = this.value;
+      const match = landmarkData.find(item => item.name === name);
+      if (match) {
+        document.getElementById('source').value = `${match.lat}, ${match.lng}`;
+      }
     });
   </script>
 

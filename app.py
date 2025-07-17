@@ -27,7 +27,7 @@ def home():
         {'name': row['Landmark Name'], 'lat': row['Latitude'], 'lng': row['Longitude']}
         for _, row in df.iterrows()
     ]
-    return render_template("route_form.html", landmarks=json.dumps(landmarks))
+    return render_template("route_form.html", landmarks=landmarks)
 
 
 @app.route('/fetch_routes', methods=['POST'])
