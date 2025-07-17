@@ -32,19 +32,17 @@ def home():
 
 
 
+import glob
+
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
-    # ✅ Step 1: Clear all previous session data
+    # 🔁 Clear previous session and files
     session.clear()
 
-    # ✅ Step 2: Clean up old map preview files
-    for file in glob.glob("templates/route_preview_*.html"):
-        try:
-            os.remove(file)
-        except Exception as e:
-            print(f"Failed to delete old file {file}: {e}")
+    # 🔥 Delete old preview HTML files
+    for f in glob.glob("templates/route_preview_*.html"):
+        os.remove(f)
 
-    # ✅ Step 3: Read new input
     source = request.form['source']
     destination = request.form['destination']
     vehicle = request.form['vehicle']
@@ -53,9 +51,8 @@ def fetch_routes():
         source_coords = tuple(map(float, source.split(',')))
         dest_coords = tuple(map(float, destination.split(',')))
     except ValueError:
-        return "Invalid coordinates format. Please use lat,lng"
+        return "Invalid coordinates"
 
-    # ✅ Step 4: Fetch new routes
     directions = gmaps.directions(
         source_coords, dest_coords,
         mode=vehicle,
@@ -66,13 +63,11 @@ def fetch_routes():
     if not directions:
         return "No routes found."
 
-    # ✅ Step 5: Save new session data
     session['directions'] = directions
     session['source'] = source_coords
     session['destination'] = dest_coords
     session['vehicle'] = vehicle
 
-    # ✅ Step 6: Generate preview maps for each route
     routes = []
     for i, route in enumerate(directions):
         coords = polyline.decode(route['overview_polyline']['points'])
@@ -82,7 +77,6 @@ def fetch_routes():
 
         m = folium.Map(location=coords[len(coords)//2], zoom_start=12)
         folium.PolyLine(coords, color='blue', weight=5).add_to(m)
-
         preview_file = f"route_preview_{i}.html"
         m.save(f"templates/{preview_file}")
 
@@ -91,7 +85,7 @@ def fetch_routes():
             'distance': distance,
             'duration': duration,
             'summary': summary,
-            'preview_file': preview_file + f"?v={datetime.now().timestamp()}"  # cache-buster
+            'preview_file': preview_file
         })
 
     return render_template("route_select.html", routes=routes)
@@ -244,6 +238,9 @@ def download_map(filename):
 
 @app.route('/preview/<filename>')
 def view_preview(filename):
+    path = os.path.join("templates", filename)
+    if not os.path.exists(path):
+        return "Preview not found.", 404
     return render_template(filename)
 
 if __name__ == '__main__':
