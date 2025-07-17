@@ -32,34 +32,30 @@ def home():
 
 
 
-import glob
-
 @app.route('/fetch_routes', methods=['POST'])
 def fetch_routes():
-    # ✅ Step 1: Clear the previous session completely
+    # ✅ Step 1: Clear all previous session data
     session.clear()
 
-    # ✅ Step 2: Delete old route preview files
-    preview_files = glob.glob("templates/route_preview_*.html")
-    for file in preview_files:
+    # ✅ Step 2: Clean up old map preview files
+    for file in glob.glob("templates/route_preview_*.html"):
         try:
             os.remove(file)
         except Exception as e:
-            print(f"Error deleting {file}: {e}")
+            print(f"Failed to delete old file {file}: {e}")
 
-    # ✅ Step 3: Read new inputs
+    # ✅ Step 3: Read new input
     source = request.form['source']
     destination = request.form['destination']
     vehicle = request.form['vehicle']
 
-    # ✅ Step 4: Parse coordinates
     try:
         source_coords = tuple(map(float, source.split(',')))
         dest_coords = tuple(map(float, destination.split(',')))
     except ValueError:
-        return "Invalid coordinates format. Please use lat,lng format."
+        return "Invalid coordinates format. Please use lat,lng"
 
-    # ✅ Step 5: Request new directions
+    # ✅ Step 4: Fetch new routes
     directions = gmaps.directions(
         source_coords, dest_coords,
         mode=vehicle,
@@ -70,13 +66,13 @@ def fetch_routes():
     if not directions:
         return "No routes found."
 
-    # ✅ Step 6: Store new session data
+    # ✅ Step 5: Save new session data
     session['directions'] = directions
     session['source'] = source_coords
     session['destination'] = dest_coords
     session['vehicle'] = vehicle
 
-    # ✅ Step 7: Generate fresh previews
+    # ✅ Step 6: Generate preview maps for each route
     routes = []
     for i, route in enumerate(directions):
         coords = polyline.decode(route['overview_polyline']['points'])
@@ -95,7 +91,7 @@ def fetch_routes():
             'distance': distance,
             'duration': duration,
             'summary': summary,
-            'preview_file': preview_file
+            'preview_file': preview_file + f"?v={datetime.now().timestamp()}"  # cache-buster
         })
 
     return render_template("route_select.html", routes=routes)

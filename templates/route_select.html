@@ -104,7 +104,7 @@
                 </form>
             </div>
             <div class="route-map">
-                <iframe src="{{ url_for('view_preview', filename=route.preview_file) }}"></iframe>
+                <iframe src="{{ url_for('view_preview', filename=route.preview_file) }}?v={{ loop.index }}"></iframe>
             </div>
         </div>
         {% endfor %}
