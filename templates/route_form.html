@@ -2,26 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>IndianOil Route Planner</title>
+  <title>IndianOil Route Analyser</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to right, #003366, #0055A4);
-      color: white;
+      background: linear-gradient(135deg, #E3F2FD, #BBDEFB, #90CAF9);
+      color: #333;
       height: 100vh;
+      overflow: hidden;
+      position: relative;
       display: flex;
       flex-direction: column;
     }
 
+    /* Watermark Background Text */
+    .background-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      font-weight: bold;
+      color: rgba(0, 0, 0, 0.05);
+      white-space: nowrap;
+      z-index: 0;
+      animation: fadeText 20s linear infinite;
+    }
+
+    @keyframes fadeText {
+      0% { content: "Nation First"; }
+      20% { content: "Energizing India"; }
+      40% { content: "Fueling Progress"; }
+      60% { content: "Safety First"; }
+      80% { content: "Innovation at Core"; }
+      100% { content: "Nation First"; }
+    }
+
     header {
+      z-index: 2;
       padding: 20px 40px;
       font-size: 2rem;
       font-weight: bold;
-      background-color: rgba(0, 0, 0, 0.2);
+      background-color: rgba(255, 255, 255, 0.2);
       text-align: center;
-      text-shadow: 1px 1px #000;
+      text-shadow: 1px 1px #fff;
     }
 
     header img {
@@ -35,7 +63,7 @@
       margin-top: 5px;
       font-style: italic;
       font-size: 1.1rem;
-      color: #ffcc00;
+      color: #007acc;
     }
 
     main {
@@ -43,21 +71,16 @@
       display: flex;
       justify-content: center;
       align-items: center;
+      z-index: 2;
     }
 
     .form-box {
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: rgba(255, 255, 255, 0.8);
       padding: 30px;
       border-radius: 12px;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
       width: 400px;
-      backdrop-filter: blur(4px);
-    }
-
-    .form-box h2 {
-      text-align: center;
-      margin-bottom: 25px;
-      color: #ffffff;
+      backdrop-filter: blur(6px);
     }
 
     input, select {
@@ -67,17 +90,17 @@
       border: none;
       border-radius: 6px;
       font-size: 1rem;
-      background-color: #ffffff;
-      color: #000000;
+      background-color: #f5f5f5;
+      color: #000;
     }
 
     input:focus, select:focus {
-      outline: 2px solid #ffa500;
+      outline: 2px solid #2196f3;
     }
 
     button {
-      background-color: #ffa500;
-      color: #000;
+      background-color: #2196f3;
+      color: #fff;
       border: none;
       padding: 12px;
       font-weight: bold;
@@ -89,29 +112,38 @@
     }
 
     button:hover {
-      background-color: #ffc107;
+      background-color: #42a5f5;
+    }
+
+    button:disabled {
+      background-color: #90caf9;
+      cursor: not-allowed;
     }
 
     .footer {
+      z-index: 2;
       text-align: center;
       padding: 15px;
       font-size: 0.9rem;
-      background-color: rgba(0,0,0,0.2);
+      background-color: rgba(255,255,255,0.2);
     }
 
-    #landmarkInfo {
-      background-color: rgba(0,0,0,0.2);
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 20px;
+    .footer small {
+      display: block;
+      margin-top: 5px;
+      font-size: 0.8rem;
+      color: #444;
     }
 
-    #landmarkInfo p {
-      margin: 5px 0;
+    datalist option {
+      color: black;
     }
   </style>
 </head>
+
 <body>
+  <!-- Watermark Background -->
+  <div class="background-text" id="bg-text">Nation First</div>
 
   <header>
     <img src="{{ url_for('static', filename='iocl_logo.png') }}" alt="IOCL Logo">
@@ -123,18 +155,12 @@
     <form class="form-box" method="POST" action="{{ url_for('fetch_routes') }}">
       <h2>Enter Route Details</h2>
 
-      <label>Source Landmark Code</label>
-      <select id="landmarkCode" required>
-        <option value="">-- Select a Landmark Code --</option>
-      </select>
+      <label>Source Landmark Name</label>
+      <input type="text" id="landmark-input" list="landmarks" placeholder="Type landmark..." required>
+      <datalist id="landmarks"></datalist>
 
-      <div id="landmarkInfo" style="display:none;">
-        <p><strong>Name:</strong> <span id="landmarkName"></span></p>
-        <p><strong>Latitude:</strong> <span id="landmarkLat"></span></p>
-        <p><strong>Longitude:</strong> <span id="landmarkLng"></span></p>
-      </div>
-
-      <input type="hidden" name="source" id="sourceCoord">
+      <label>Latitude, Longitude (auto-filled)</label>
+      <input type="text" name="source" id="source-coords" readonly required>
 
       <label>Destination Coordinates (lat,lng)</label>
       <input type="text" name="destination" placeholder="e.g. 22.3, 73.1" required>
@@ -146,37 +172,61 @@
         <option value="bicycling">🚴 Bicycling</option>
       </select>
 
-      <button type="submit"><i class="fa-solid fa-route"></i> Generate Routes</button>
+      <button type="submit" id="submit-btn" disabled>
+        <i class="fa-solid fa-route"></i> Generate Routes
+      </button>
     </form>
   </main>
 
-  <div class="footer">© 2025 IndianOil Corporation Ltd.</div>
+  <div class="footer">
+    © 2025 IndianOil Corporation Ltd.
+    <small>Developed by NEL Vadinar and Jamnagar RC Team</small>
+  </div>
 
   <script>
-    const landmarks = {{ landmarks | safe }};
-    const dropdown = document.getElementById("landmarkCode");
-    const infoBox = document.getElementById("landmarkInfo");
+    const slogans = [
+      "Nation First",
+      "Energizing India",
+      "Fueling Progress",
+      "Safety First",
+      "Innovation at Core"
+    ];
 
-    landmarks.forEach(lm => {
-      const opt = document.createElement("option");
-      opt.value = lm.code;
-      opt.textContent = lm.code;
-      dropdown.appendChild(opt);
-    });
+    const landmarks = {{ landmarks|safe }};
+    const $bgText = document.getElementById('bg-text');
+    let sloganIndex = 0;
 
-    dropdown.addEventListener("change", function () {
-      const selected = landmarks.find(l => l.code === this.value);
-      if (selected) {
-        document.getElementById("landmarkName").textContent = selected.name;
-        document.getElementById("landmarkLat").textContent = selected.lat;
-        document.getElementById("landmarkLng").textContent = selected.lng;
-        document.getElementById("sourceCoord").value = `${selected.lat},${selected.lng}`;
-        infoBox.style.display = "block";
-      } else {
-        infoBox.style.display = "none";
+    setInterval(() => {
+      sloganIndex = (sloganIndex + 1) % slogans.length;
+      $bgText.innerText = slogans[sloganIndex];
+    }, 4000);
+
+    $(document).ready(function () {
+      const $datalist = $('#landmarks');
+      const $input = $('#landmark-input');
+      const $source = $('#source-coords');
+      const $submit = $('#submit-btn');
+
+      // Populate datalist
+      for (const entry of landmarks) {
+        $datalist.append(`<option value="${entry.name}">`);
       }
+
+      // Enable button only if match found
+      function updateInput() {
+        const inputVal = $input.val().toLowerCase();
+        const matched = landmarks.find(l => l.name.toLowerCase() === inputVal);
+        if (matched) {
+          $source.val(`${matched.lat}, ${matched.lng}`);
+          $submit.prop('disabled', false);
+        } else {
+          $source.val('');
+          $submit.prop('disabled', true);
+        }
+      }
+
+      $input.on('input', updateInput);
     });
   </script>
-
 </body>
 </html>

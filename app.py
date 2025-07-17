@@ -22,22 +22,11 @@ gmaps = googlemaps.Client(key=API_KEY)
 
 @app.route('/')
 def home():
-    try:
-        df = pd.read_excel("IOCL_Landmark_Details.xlsx")
-
-        landmarks = [
-            {
-                "code": str(row["Landmark Code"]),
-                "name": row["Landmark Name"],
-                "lat": row["Latitude"],
-                "lng": row["Longitude"]
-            }
-            for _, row in df.iterrows()
-        ]
-    except Exception as e:
-        print("Error reading Excel:", e)
-        landmarks = []
-
+    df = pd.read_excel("IOCL_Landmark_Details.xlsx")
+    landmarks = [
+        {'name': row['Landmark Name'], 'lat': row['Latitude'], 'lng': row['Longitude']}
+        for _, row in df.iterrows()
+    ]
     return render_template("route_form.html", landmarks=json.dumps(landmarks))
 
 
